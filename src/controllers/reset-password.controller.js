@@ -2,23 +2,31 @@ import {promptResetPasswordService, resetPasswordService} from "../services/rese
 import {throwError} from "../utils/response-helper.js";
 
 export async function promptResetPassword(req, res) {
-    const userDetails = req.user;
+    const authUser = req.user;
 
-    const data = await promptResetPasswordService(userDetails);
+    const data = await promptResetPasswordService(authUser);
 
     return res.status(data.statusCode).json(data);
 }
 
 export async function resetPassword(req, res) {
-    const userDetails = req.user;
-    const token = req.params.token;
+    const {id: authUserId} = req.user;
+    const {userId, token} = req.params;
     const {oldPassword, newPassword} = req.body;
 
     if (!token) {
-        throwError(404, "Token not found");
+        throwError(400, "Token is required");
     }
 
-    const data = await resetPasswordService(userDetails, token, oldPassword, newPassword);
+    if (!authUserId) {
+        throwError(401, "Authentication required");
+    }
+
+    if (String(userId) !== String(authUserId)) {
+        throwError(403, "Forbidden: user mismatch");
+    }
+
+    const data = await resetPasswordService(authUserId, token, oldPassword, newPassword);
 
     return res.status(data.statusCode).json(data);
 }

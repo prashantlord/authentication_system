@@ -7,7 +7,7 @@ export function generateJwtToken(payload) {
     return jwt.sign(payload, process.env.JWT_SECRET_KEY, {expiresIn: process.env.JWT_EXPIRES_IN});
 }
 
-export async function generateEmailToken(userId, TOKEN_TTL, tokenType) {
+export async function generateEmailToken(userId, TOKEN_TTL = 60, tokenType) {
     const rawToken = crypto.randomUUID().replace(/-/g, "");
 
     const hashedToken = crypto
@@ -15,9 +15,9 @@ export async function generateEmailToken(userId, TOKEN_TTL, tokenType) {
         .update(rawToken)
         .digest("hex");
 
-    const key = `${tokenType}:${hashedToken}`;
+    const key = `${tokenType}:${userId}`;
 
-    await redis.set(key, JSON.stringify({userId}), "EX", TOKEN_TTL);
+    await redis.set(key, hashedToken, "EX", TOKEN_TTL);
 
     return rawToken;
 }
@@ -28,15 +28,14 @@ export async function validateEmailToken(userId, token, tokenType) {
         .update(token)
         .digest("hex");
 
-    const key = `${tokenType}:${hashedToken}`;
+    const key = `${tokenType}:${userId}`;
 
-    const data = await redis.get(key);
-    if (!data) throwError(400, "Invalid token");
+    const res = await redis.get(key);
+    if (!res) throwError(400, "Invalid token");
 
-    const dp = JSON.parse(data);
-
-    if (!dp || dp.userId.toString() !== userId.toString())
+    if (String(res) !== String(hashedToken)) {
         throwError(400, "Invalid token");
+    }
 
     return key;
 }

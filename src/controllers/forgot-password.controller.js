@@ -7,11 +7,13 @@ export async function promptForgotPassword(req, res) {
 
     const user = await User.findOne({
         email
-    });
+    }).select("_id username email").lean();
 
     if (!user) throwError(404, "User not found");
 
-    const data = await promptForgotPasswordService(user);
+    const data = await promptForgotPasswordService({
+        id: user._id, username: user.username, email: user.email
+    });
 
     return res.status(data.statusCode).json(data);
 }

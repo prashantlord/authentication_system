@@ -6,8 +6,8 @@ import redis from "../config/redis.js";
 const TOKEN_TTL = 5 * 60; // 10 min
 
 export async function promptForgotPasswordService(user) {
-    const token = await generateEmailToken(user._id, TOKEN_TTL, "forgot-password");
-    const link = `${process.env.FRONTEND_URL}/forgot-password/${user._id}/${token}`;
+    const token = await generateEmailToken(user.id, TOKEN_TTL, "forgot-password");
+    const link = `${process.env.FRONTEND_URL}/forgot-password/${user.id}/${token}`;
 
     await sendEmail(user.email, "Password Reset", "reset-password", {
         link, name: user.username,
