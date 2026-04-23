@@ -1,0 +1,35 @@
+import express from "express";
+
+import {validate} from "../middleware/validate.js";
+import {authenticatedUser} from "../middleware/auth.middleware.js";
+
+import loginSchema from "../schema/login.schema.js";
+import registerSchema from "../schema/register.schema.js";
+
+import {getUser, loginUser, registerUser} from "../controllers/user.controller.js";
+import {emailVerification, promptEmailVerification} from "../controllers/email-verification.controller.js";
+import {promptResetPassword, resetPassword} from "../controllers/reset-password.controller.js";
+import {resetPasswordSchema} from "../schema/reset-password.schema.js";
+import {forgotPasswordSchema, promptForgotPasswordSchema} from "../schema/forgot-password.schema.js";
+import {forgotPassword, promptForgotPassword} from "../controllers/forgot-password.controller.js";
+
+const router = express.Router();
+
+router.post('/login', validate(loginSchema), loginUser);
+router.post('/register', validate(registerSchema), registerUser);
+
+router.post("/forgot-password", validate(promptForgotPasswordSchema), promptForgotPassword);
+router.patch("/forgot-password/:userId/:token", validate(forgotPasswordSchema), forgotPassword);
+
+router.use(authenticatedUser);
+
+router.get("/", getUser);
+
+router.post("/verify-email", promptEmailVerification);
+router.get("/verify-email/:token", emailVerification);
+
+router.post("/reset-password", promptResetPassword);
+router.patch("/reset-password/:token", validate(resetPasswordSchema), resetPassword);
+
+
+export default router;
